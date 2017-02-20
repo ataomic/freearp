@@ -1,0 +1,16 @@
+#!/bin/bash
+i=1
+ifname=$1
+shost=$2
+dhost=$3
+snet=$4
+dip=$5
+
+#format
+#ethN xx:xx:xx:xx:xx:xx xx:xx:xx:xx:xx:xx A.B.C.X A.B.C.D
+
+while [ $i -lt 255 ]; do
+	echo $ifname $shost $dhost $snet.$i $dip
+	((i=i+1))
+done
+
