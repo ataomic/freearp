@@ -6,8 +6,7 @@
 
 #include "fa_sys.h"
 
-struct fa_arphdr
-  {
+struct fa_arphdr {
     u16 ar_hrd;		/* Format of hardware address.  */
     u16 ar_pro;		/* Format of protocol address.  */
     u8 ar_hln;		/* Length of hardware address.  */
