@@ -12,9 +12,11 @@ int fa_addr_cmp(const struct fa_addr* a, const struct fa_addr* b)
 		return ret;
 	switch(a->type) {
 		case FA_ADDR_HW:
+			return memcmp(a->u.hw, b->u.hw);
 		case FA_ADDR_IP:
+			return fa_int_cmp(a->u.ip, b->u.ip);
 		case FA_ADDR_HOST:
-			break;
+			return stricmp(a->u.host, b->u.host);
 	}
 
 	return -1;
@@ -22,14 +24,34 @@ int fa_addr_cmp(const struct fa_addr* a, const struct fa_addr* b)
 
 void fa_addr_copy(struct fa_addr* a, const struct fa_addr* b)
 {
+	a->type = b->type;
+	a->owner = b->owner;
+	switch(a->type) {
+		case FA_ADDR_HW:
+			memcpy(a->u.hw, b->u.hw, sizeof(a->u.hw));
+			break;
+		case FA_ADDR_IP:
+			a->u.ip = b->u.ip;
+			break;
+		case FA_ADDR_HOST:
+			a->u.host = strdup(b->u.host);
+			break;
+	}
 }
 
 void fa_addr_cleanup(struct fa_addr* a)
 {
+	switch(a->type) {
+		case FA_ADDR_HOST:
+			free(a->u.host);
+			a->u.host = NULL;
+			break;
+	}
 }
 
 void fa_addr_replace(struct fa_addr* a, struct fa_addr* b)
 {
+	list_replace(&a->list, &b->list);
 }
 
 struct fa_addr* fa_table_find_addr(struct fa_table* table, u32 id,
@@ -96,14 +118,23 @@ void fa_table_erase_node(struct fa_table* table, struct fa_node* node)
 	}
 }
 
-int fa_node_add_addr(struct fa_node* node, const struct fa_addr* addr)
+struct fa_addr* fa_node_find_addr(struct fa_node* node,
+	const struct fa_addr* addr)
 {
 	int i;
 
 	for(i = 0; i < node->count; i ++) {
 		if(fa_addr_equals(node->addr+i, addr))
-			return FA_DUP;
+			return node->addr+i;
 	}
+
+	return NULL;
+}
+
+int fa_node_add_addr(struct fa_node* node, const struct fa_addr* addr)
+{
+	if(fa_node_find_addr(node, addr))
+		return FA_DUP;
 	if(node->count+1 > FA_ADDR_MAX)
 		return FA_FAIL;
 	
@@ -113,21 +144,22 @@ int fa_node_add_addr(struct fa_node* node, const struct fa_addr* addr)
 	return FA_OK;
 }
 
-void fa_node_del_addr(struct fa_node* node, const struct fa_addr* addr)
+void fa_node_del_addr(struct fa_node* node, struct fa_addr* addr)
 {
-	struct fa_addr* fa;
+	int index;
+	struct fa_addr* fb;
 
-	for(i = 0; i < node->count; i ++) {
-		fa = node->addr+i;
-		if(fa_addr_equals(fa, addr)) {
-			fa_addr_cleanup(fa);
-			if(i < node->count-1) {
-				fa_addr_copy(fa, node->addr+node->count-1);
-				fa_addr_replace(fa, node->addr+node->count-1);
-			}
-			node->count --;
-			break;
-		}
+	index = fa_addr_index(node, addr);
+	if(index < 0)
+		return;
+	
+	fa_addr_cleanup(addr);
+	if(index < node->count-1) {
+		fb = node->addr+node->count-1;
+		fa_addr_copy(addr, fb);
+		fa_addr_replace(addr, fb);
+		fa_addr_cleanup(fb);
 	}
+	node->count --;
 }
 

@@ -44,6 +44,12 @@ struct fa_node {
 	(node)->count = 0; \
 } while(0)
 
+#define fa_addr_is_valid(node, fa) \
+	((fa) >= (node)->addr && (fa) < (node)->addr+(node)->count)
+
+#define fa_addr_index(node, fa) \
+	(fa_addr_is_valid(node, fa) ? (fa)-(node)->addr : -1)
+
 struct fa_table {
 	list_t buckets[FA_BUCKET_MAX];
 	u32 count;
@@ -83,7 +89,10 @@ struct fa_node* fa_table_find_node(struct fa_table* table, u32 id,
 int fa_table_insert_node(struct fa_table* table, struct fa_node* node);
 void fa_table_erase_node(struct fa_table* table, struct fa_node* node);
 
+struct fa_addr* fa_node_find_addr(struct fa_node* node,
+	const struct fa_addr* addr);
 int fa_node_add_addr(struct fa_node* node, const struct fa_addr* addr);
+/* must erase addr from table first */
 void fa_node_del_addr(struct fa_node* node, const struct fa_addr* addr);
 
 #ifdef __cplusplus
