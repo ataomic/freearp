@@ -63,7 +63,7 @@ struct fa_addr* fa_table_find_addr(struct fa_table* table, u32 id,
 
 	list_for_each(pos, bucket) {
 		fa = fa_addr_entry(pos);
-		if(fa_addr_equals(fa, addr))
+		if(fa_addr_equals(fa, addr) && fa->owner->id == id)
 			return fa;
 	}
 

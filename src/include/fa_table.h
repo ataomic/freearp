@@ -30,18 +30,31 @@ struct fa_addr {
 	list_init(&(addr)->list); \
 } while(0)
 
+enum {
+	FA_NODE_NONE = 0,
+	FA_NODE_NORMAL,
+	FA_NODE_CLNT,
+	FA_NODE_SRVR,
+	FA_NODE_GW,
+	FA_NODE_TYPE_MAX,
+};
+
 struct fa_node {
+	list_t list;
 	struct fa_addr addr[FA_ADDR_MAX];
 	u32 id;
 	u32 count:8;
-	u32 unused:24;
+	u32 type:8;
+	u32 unused:16;
 };
 
 #define fa_node_init(node, nid) do { \
 	int _ct_i; \
+	list_init(&(node)->list); \
 	for(_ct_i = 0; _ct_i < FA_ADDR_MAX; i ++) \
 		fa_addr_init((node)->addr+_ct_i); \
 	(node)->count = 0; \
+	(node)->id = (nid); \
 } while(0)
 
 #define fa_addr_is_valid(node, fa) \
